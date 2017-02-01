@@ -14,7 +14,7 @@ class Kohana_GeoIP {
 	
 	public function __construct ($ip, $db = 'city')
 	{
-		if ( !class_exists('\MaxMind\Db\Reader'))
+		if ( ! class_exists('\MaxMind\Db\Reader'))
 			throw new Kohana_Exception('Maxmind Reader not found');
 		
 		$this->_db = Kohana::$config->load('geoip');
