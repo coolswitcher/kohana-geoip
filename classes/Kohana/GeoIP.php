@@ -5,32 +5,42 @@
  * @url https://github.com/maxmind/MaxMind-DB-Reader-php
  */
 class Kohana_GeoIP {
-	
+
 	protected $_db;
-	protected $_ip;
 	protected $_result;
-	
+
 	CONST LANG = 'en';
-	
-	public function __construct ($ip, $db = 'city')
+
+	public function __construct ($db = 'city')
 	{
 		if ( ! class_exists('\MaxMind\Db\Reader'))
 			throw new Kohana_Exception('Maxmind Reader not found');
-		
-		$this->_db = Kohana::$config->load('geoip');
-		$this->_ip = $ip;
-		
-		if (in_array($db, array('city', 'country')))
-			$this->_read($db);
+
+		$dbfile = Kohana::$config->load('geoip.'.$db);
+
+		if (empty($dbfile) OR ! file_exists($dbfile))
+		{
+			throw new Kohana_Exception('DB file for :db not found', array (':db'=>$db));
+		}
+
+		$this->_db = new \MaxMind\Db\Reader($dbfile);
 	}
-	
-	public static function factory ($ip, $db = 'city')
+
+	public function __desctruct ()
 	{
-		return new Kohana_GeoIP($ip, $db);
+		if ($this->_db)
+		{
+			$this->_db->close();
+		}
 	}
-	
+
+	public static function factory ($db = 'city')
+	{
+		return new Kohana_GeoIP($db);
+	}
+
 	// public getters
-	
+
 	/**
 	 * Get raw data
 	 * @return mixed
@@ -39,7 +49,7 @@ class Kohana_GeoIP {
 	{
 		return $this->_result;
 	}
-	
+
 	/**
 	 * Get raw country data
 	 * @return mixed
@@ -48,7 +58,7 @@ class Kohana_GeoIP {
 	{
 		return $this->_get('country');
 	}
-	
+
 	/**
 	 * Get country code
 	 * @return mixed
@@ -57,7 +67,7 @@ class Kohana_GeoIP {
 	{
 		return $this->_get('country.iso_code');
 	}
-	
+
 	/**
 	 * Get country iso code
 	 * @param string $lang
@@ -67,7 +77,7 @@ class Kohana_GeoIP {
 	{
 		return $this->_get('country.names'.'.'.$lang);
 	}
-	
+
 	/**
 	 * Get raw continent data
 	 * @return mixed
@@ -76,7 +86,7 @@ class Kohana_GeoIP {
 	{
 		return $this->_get('continent');
 	}
-	
+
 	/**
 	 * Get continent name
 	 * @param string $lang
@@ -86,7 +96,7 @@ class Kohana_GeoIP {
 	{
 		return $this->_get('continent.names'.'.'.$lang);
 	}
-	
+
 	/**
 	 * Get city name
 	 * @param string $lang
@@ -96,27 +106,29 @@ class Kohana_GeoIP {
 	{
 		return $this->_get('city.names'.'.'.$lang);
 	}
-	
+
 	/**
 	 * Read MaxMind database
 	 * @param string $name
 	 * @return $this
 	 * @throws Kohana_Exception
 	 */
-	protected function _read ($name = 'city')
+	public function read ($ip = NULL)
 	{
-		$db = Arr::get($this->_db, $name);
-		
-		if ( !$db)
-			throw new Kohana_Exception ('Maxmind db file :db no found', array (':db'=>$name));
-		
-		$reader = new \MaxMind\Db\Reader($db);
-		$this->_result = $reader->get($this->_ip);
-		$reader->close();
-		
+		if (empty($ip))
+		{
+			$ip = Request::$client_ip;
+		}
+
+		if (empty ($ip))
+		{
+			throw new Kohana_Exception ('Error get client ip');
+		}
+
+		$this->_result = $this->_db->get($ip);
 		return $this;
 	}
-	
+
 	/**
 	 * Getter
 	 * @param $path
