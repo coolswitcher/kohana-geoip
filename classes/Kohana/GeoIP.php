@@ -109,9 +109,10 @@ class Kohana_GeoIP {
 
 	/**
 	 * Read MaxMind database
-	 * @param string $name
+	 * @param string $ip
 	 * @return $this
 	 * @throws Kohana_Exception
+	 * @throws \MaxMind\Db\Reader\InvalidDatabaseException
 	 */
 	public function read ($ip = NULL)
 	{
